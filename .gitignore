@@ -15,4 +15,3 @@ styles/
 %OUTDIR%/
 **/.build/*.toc
 **/.build/*.bib
-tex/
