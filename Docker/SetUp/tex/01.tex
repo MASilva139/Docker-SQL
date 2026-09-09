@@ -1,0 +1,66 @@
+\section{Instalación de Docker (Ubuntu 24.04)}
+\begin{itemize}
+    \item[§] \textbf{Desinstalación de versiones antiguas}\\
+Para desinstalar versiones antiguas de docker 
+\begin{lstlisting}
+for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
+\end{lstlisting}
+en este caso se vería la desinstalación de los paquetes típicos de docker.
+    \item[§] \textbf{Añadir respositorio Docker para Ubuntu}
+\begin{lstlisting}
+# Para añadir la clave GPG oficial de Docker
+sudo apt update
+sudo apt install -y ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Añadiendo el repositorio a las fuentes de APT
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt update
+\end{lstlisting}
+La clave GPG de Docker se utiliza para firmar los paquetes y repositorios, garantizando de esta manera la integridad y autenticidad de las imágenes y software descargados.\\\\Las fuentes de APT son los repositorios, servidores remotos o locales, desde los que el gestor de paquetes APT descarga e instala software. Suelen definirse en 
+    \begin{itemize}
+        \item \textit{/etc/apt/sources.list-archivo principal}
+        \item \textit{/etc/apt/sources.list.d/--directorio para fuentes adicionales (archivos .list o .sources)}
+    \end{itemize}
+    cada una de las líneas tiene el formato \textit{deb http://URL/ distribución componentes}
+    \begin{table}[H]
+        \begin{center}
+            \begin{tabular}{|l||l|}\hline
+                \textbf{Campo\hs{30}} & \textbf{Significado\hs{200}} \\\hline\hline
+                deb & Paquetes binarios precompilados \\\hline
+                deb-src & Código fuente \\\hline
+                http://URL/ & Ubicación del repositorio (también \textit{file://}, \textit{ftp://}, \textit{cdrom:}) \\\hline
+                distribución & Rama o versión (\textit{noble}, \textit{stable}, etc) \\\hline
+                componentes & \textit{main}, \textit{restricted}, \textit{universe}, \textit{multiverse} \\\hline
+            \end{tabular}
+        \end{center}
+    \end{table}
+    \item[§] \textbf{Instalación de los paquetes de Docker Engine}
+\begin{lstlisting}
+sudo apt install -y docker-ce docker-ce-cli containerd.io \
+docker-buildx-plugin docker-compose-plugin
+\end{lstlisting}
+    \item[§] \textbf{Asignación de permisos al usuario para ejecutar docker cli}
+\begin{lstlisting}
+sudo groupadd docker
+sudo usermod -aG docker $USER
+newgrp docker
+\end{lstlisting}
+    \item[§] \textbf{Configuración del arranque automático de los servicios}
+\begin{lstlisting}
+sudo systemctl enable docker.service
+sudo systemctl enable containerd.service
+\end{lstlisting}
+    \item[§] \textbf{Comprobaciones}
+    En caso de que no se haya presentado un problema en los pasos anteriores, se puede ejecutar el comando
+\begin{lstlisting}
+docker ps
+\end{lstlisting}
+\end{itemize}
+
+% https://cursosdedesarrollo.com/2024/04/instalacion-de-docker-en-ubuntu-24-04-lts/
