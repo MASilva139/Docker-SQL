@@ -1,0 +1,102 @@
+\section{Ejecución de imágenes de contenedor SQL Server para Linux}
+Hay que tener en consideración que al momento de detener y quitar un contenedor, se eliminan permanente los datos de SQL Server en el contenedor.
+
+    \subsection{Prerrequisitos}
+    \begin{itemize}
+        \item Docker Engine 1.8 o versiones posteriores en cualquier distribución de Linux compatible.
+        \item Controlador de almacenamiento \textit{everlay2} de Dicker. Este es el controlador predeterminado para la mayoría de los usuarios.
+        \item Versión más reciente de \textit{sqlcmd} en el host de Docker.
+        \item Requisitos del sistema para SQL Server en Linux.
+    \end{itemize}
+
+    \subsection{Imágen de contenedor SQL Server}
+    Para  extraer la imagen de contenedor de Linux de SQL Server 2025 (17.x) de Microsoft container Registry
+\begin{lstlisting}
+# Extracción de imagen
+docker pull mcr.microsoft.com/mssql/server:2025-lasted
+
+# En caso de la versión 2022
+docker pull mcr.microsoft.com/mssql/server:2022-lasted
+\end{lstlisting}
+    Este comando permite extraer la imagen de contenedor de Linux de SQL Server más reciente. Paraextraer una imágen específica se añaden los dos puntos y el nombre de etiqueta:
+    \begin{verbatim}
+        mcr.microsoft.com/mssql/server:2025-GA-ubuntu
+    \end{verbatim}
+    Entre las imágenes disponibles se tienen:
+    \begin{table}[H]
+        \begin{center}
+            \begin{tabular}{l|c||l|c}
+                \textbf{Imágen} & \textbf{Última publicación} & \textbf{Imágen} & \textbf{Última publicación} \\\hline\hline
+                2019-latest & 09/08/2026 & 2025-CU6-GDR1-ubuntu-22.04 & 07/14/2026 \\\hline
+                2025-latest & 09/08/2026 & 2025-CU6-GDR1-ubuntu-24.04 & 07/14/2026 \\\hline
+                latest & 09/08/2026 & 2022-CU25-GDR2-ubuntu-22.04 & 07/14/2026 \\\hline
+                2022-latest & 09/08/2026 & 2022-CU25-GDR2-ubuntu-20.04 & 07/14/2026 \\\hline
+                2017-latest & 09/08/2026 & 2025-CU6-ubuntu-22.04 & 06/17/2026 \\\hline
+                2022-CU8-ubuntu-22.04 & 08/13/2026 & 2025-CU6-ubuntu-24.04 & 06/17/2026 \\\hline
+                2025-CU8-ubuntu-24.04 & 08/13/2026 & 2025-CU5-ubuntu-22.04 & 05/20/2026 \\\hline
+                2022-CU26-ubuntu-22.04 & 07/16/2026 & 2022-CU25-ubuntu-22.04 & 05/20/2026 \\\hline
+                2022-CU26-ubuntu-20.04 & 07/16/2026 & 2025-CU5-ubuntu-24.04 & 05/20/2026 \\\hline
+                2025-CU7-ubuntu-22.04 & 07/16/2026 & 2022-CU25-ubuntu-20.04 & 05/20/2026 \\\hline
+                2025-CU7-ubuntu-24.04 & 07/16/2026 & 2019-CU32-GDR8-ubuntu-20.04 & 05/12/2026 \\\hline
+                2017-CU31-GDR17-ubuntu-18.04 & 07/14/2026 & 2022-CU24-GDR2-ubuntu-22.04 & 05/12/2026 \\\hline
+                2019-CU32-GDR10-ubuntu-20.04 & 07/14/2026 & 2022-CU24-GDR2-ubuntu-20.04 & 05/12/2026 \\\hline
+            \end{tabular}
+        \end{center}
+    \end{table}
+    A partir de SQL Server 2022 (16.x) CU 14 y SQL Server 2019 (15.x) CU 28, las imágenes de contenedor incluyen el nuevo paquete \textit{mssql-tools18}. El directorio \textit{/opt/mssql-tools/bin} anterior se tiene en proceso de eliminación. El nuevo directorio para las herramientas ODBC 18 de microsoft es \textit{/opt/mssql-tools18/bin}, alineado con la oferta de herramientas más reciente.
+
+    \subsection{Ejecución del contenedor}
+    Para ejecutar la imagen de contenedor de Linux con Docker, desde el Bash,
+\begin{lstlisting}
+docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=<password>" \
+    -p 1433:1433 --name sql1 --hostname sql1
+    -d \
+    mcr.microsoft.com/mssql/server:2025-latest
+
+# Para SQL Server 2022
+docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=<password>" \
+    -p 1433:1433 --name sql1 --hostname sql1
+    -d \
+    mcr.microsoft.com/mssql/server:2022-latest
+\end{lstlisting}
+    En este inicio se crea un contenedor con la edición para desarrolladores de SQL Server. El proceso para ejecutar las ediciones de producción en contenedores es ligeramente diferente.\\Los parámetros del comando \textit{docker\ run} son los siguientes:
+    \begin{table}[ht]
+        \begin{center}
+            \begin{tblr}{colspec={|l |X[j,m]| j}}\hline
+                \textbf{Parámetro} & \textbf{Descripción} \\\hline\hline
+                -e "ACCEPT\_EULA=Y" & Establece la variable \textit{ACCEPT\_EULA} en cualquier valor para confirmar que se acepta el contrato de licencia de usuario final. Configuración requerida para la imagen de SQL Server. \\\hline
+                -e "MSSQL\_SA\_PASSWORD=<password>" & Especifica una contraseña segura que tenga al menos ocho caracteres y cumpla la directiva contraseña. Configuración requerida para la imagen de SQL Server. \\\hline
+                -e "MSSQL\_COLLATION=<SQL\_Server\_collation>" & Especifica una intercalación de SQL Server personalizada, en lugar de la predeterminada \textit{SQL\_Latin1\_General\_CP1\_CI\_AS}. \\\hline
+                -p 1433:1433 & Asigna un puerto TCP en el entorno de host (primer valor) a un puerto TCP en el contenedor (segundo valor). \\\hline
+                -name sql1 & Especifica un nombre personalizado para el contenedor en lugar de uno aleatoriamente. No se puede utilizar el mismo nombre para ejecutar más de un contenedor. \\\hline
+                -hostname sql1 & Establece explícitamente el nombre de host del contenedor. Si no se especifica el nombre de host, se adopta como predeterminado el identificador del contenedor, que es un GUID del sistema generado aleatoriamente. \\\hline
+                -d & Ejecuta el contenedor en segundo plano. \\\hline
+                mcr.microsoft.com/mssql/server:2025-latest & Imagen del contenedor de SQL Server para Linux. \\\hline
+            \end{tblr}
+        \end{center}
+    \end{table}
+
+    \subsection{Cambio de la contraseña del administrador}
+    La cuenta de administrador del sistema (\textit{sa}) se crea en la instancia de SQL Server durante el proceso de instalación. Después de crear el contenedor de SQL Server
+\begin{lstlisting}
+# En el contenedor
+echo $MSSQL_SA_PASSWORD
+\end{lstlisting}
+    para detectar la variable \textit{MSSQL\_SA\_PASSWORD} del entorno especificado. Para fines de seguridad es necesario que se cambie la contraseña de \textit{sa} en un entorno de producción.
+    \begin{itemize}
+        \item[§] Elejir una contraseña segura para usar en la cuenta de \textit{sa}.
+        \item[§] Usar el comando \textit{docker exec} para ejecutar \textit{sqlcmd} y cambiar la contraseña mediante Transact-SQL
+\begin{lstlisting}
+docker exec -it sql1 /opt/mssql-tools18/bin/sqlcmd \
+   -S localhost -U sa \
+   -P "$(read -sp "Enter current SA password: "; echo "${REPLY}")" \
+   -Q "ALTER LOGIN sa WITH PASSWORD=\"$(read -sp "Enter new SA password: "; echo "${REPLY}")\""
+\end{lstlisting}
+        Las versiones recientes de \textit{sqlcmd} son seguras de forma predeterminada.
+    \end{itemize}
+
+    \subsection{Deshabilidar la cuenta de SA como procedimiento recomendado}
+    \begin{tcolorbox}[bluebox]
+        Se necesitan estas credenciales para los pasos posteriores. Anotar el id. de usuario y la contraseña que se escriban en este paso.
+    \end{tcolorbox}
+    Tras conectarse a la instancia de SQL Server mediante la cuenta de administrador del sistema (\textit{sa}) después de la instalación, es importante realizar los siguientes pasos y posteriormente desabilitar inmediatamente la cuenta de \textit{sa} como procedimiento recomendado de seguridad.
